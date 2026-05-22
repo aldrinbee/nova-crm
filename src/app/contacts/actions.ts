@@ -21,27 +21,29 @@ export async function createContact(input: CreateContactInput) {
   if (input.organization_name?.trim()) {
     const orgName = input.organization_name.trim();
 
-    const { data: existingOrg } = await supabase
+    const lookup = await supabase
       .from("organizations")
       .select("id")
       .ilike("name", orgName)
       .maybeSingle();
 
+    const existingOrg = lookup.data as { id: string } | null;
+
     if (existingOrg) {
       organization_id = existingOrg.id;
     } else {
-      const { data: newOrg, error: orgError } = await supabase
+      const insert = await supabase
         .from("organizations")
         .insert({ name: orgName })
         .select("id")
         .single();
 
-      if (orgError) return { error: orgError.message };
-      organization_id = newOrg.id;
+      if (insert.error) return { error: insert.error.message };
+      organization_id = (insert.data as { id: string }).id;
     }
   }
 
-  const { data: contact, error } = await supabase
+  const contactInsert = await supabase
     .from("contacts")
     .insert({
       full_name: input.full_name.trim(),
@@ -52,11 +54,13 @@ export async function createContact(input: CreateContactInput) {
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (contactInsert.error) return { error: contactInsert.error.message };
+
+  const contactId = (contactInsert.data as { id: string }).id;
 
   if (input.note?.trim()) {
     await supabase.from("interactions").insert({
-      contact_id: contact.id,
+      contact_id: contactId,
       type: "met_in_person",
       date: new Date().toISOString().slice(0, 10),
       summary: input.note.trim(),

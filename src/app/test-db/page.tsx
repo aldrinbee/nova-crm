@@ -6,7 +6,7 @@ export default async function TestDbPage() {
   const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.from("contacts").select("count").single();
 
-  const tables = ["contacts", "organizations", "events", "interactions", "follow_ups", "contact_events"];
+  const tables = ["contacts", "organizations", "events", "interactions", "follow_ups", "contact_events"] as const;
   const tableResults = await Promise.all(
     tables.map(async (table) => {
       const { error } = await supabase.from(table).select("count").single();
