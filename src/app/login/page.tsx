@@ -90,17 +90,17 @@ export default function LoginPage() {
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
             <div>
               <label className="block text-sm text-[#94A3B8] mb-2">
-                6-digit verification code
+                Verification code
               </label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="000000"
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="00000000"
                 required
                 autoFocus
-                className="w-full h-14 px-4 rounded-lg bg-[#0F2337] border border-[#1E3A5F] text-[#F1F5F9] placeholder-[#475569] focus:outline-none focus:border-[#3B82F6] transition-colors text-center text-2xl tracking-[0.5em] font-mono"
+                className="w-full h-14 px-4 rounded-lg bg-[#0F2337] border border-[#1E3A5F] text-[#F1F5F9] placeholder-[#475569] focus:outline-none focus:border-[#3B82F6] transition-colors text-center text-2xl tracking-[0.4em] font-mono"
               />
             </div>
 
@@ -108,7 +108,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || code.length !== 6}
+              disabled={loading || code.length < 6}
               className="h-12 rounded-lg bg-[#3B82F6] text-white font-medium hover:bg-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? "Verifying..." : "Sign in"}
