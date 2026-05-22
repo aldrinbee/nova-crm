@@ -11,36 +11,43 @@ export type CreateContactInput = {
   job_title?: string;
   note?: string;
   priority: Priority;
+  event_id?: string;
 };
+
+async function findOrCreateOrg(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  name: string
+): Promise<{ id: string | null; error?: string }> {
+  const trimmed = name.trim();
+  if (!trimmed) return { id: null };
+
+  const lookup = await supabase
+    .from("organizations")
+    .select("id")
+    .ilike("name", trimmed)
+    .maybeSingle();
+
+  const existing = lookup.data as { id: string } | null;
+  if (existing) return { id: existing.id };
+
+  const insert = await supabase
+    .from("organizations")
+    .insert({ name: trimmed })
+    .select("id")
+    .single();
+
+  if (insert.error) return { id: null, error: insert.error.message };
+  return { id: (insert.data as { id: string }).id };
+}
 
 export async function createContact(input: CreateContactInput) {
   const supabase = await createClient();
 
   let organization_id: string | null = null;
-
   if (input.organization_name?.trim()) {
-    const orgName = input.organization_name.trim();
-
-    const lookup = await supabase
-      .from("organizations")
-      .select("id")
-      .ilike("name", orgName)
-      .maybeSingle();
-
-    const existingOrg = lookup.data as { id: string } | null;
-
-    if (existingOrg) {
-      organization_id = existingOrg.id;
-    } else {
-      const insert = await supabase
-        .from("organizations")
-        .insert({ name: orgName })
-        .select("id")
-        .single();
-
-      if (insert.error) return { error: insert.error.message };
-      organization_id = (insert.data as { id: string }).id;
-    }
+    const orgResult = await findOrCreateOrg(supabase, input.organization_name);
+    if (orgResult.error) return { error: orgResult.error };
+    organization_id = orgResult.id;
   }
 
   const contactInsert = await supabase
@@ -55,17 +62,76 @@ export async function createContact(input: CreateContactInput) {
     .single();
 
   if (contactInsert.error) return { error: contactInsert.error.message };
-
   const contactId = (contactInsert.data as { id: string }).id;
+
+  if (input.event_id) {
+    await supabase.from("contact_events").insert({
+      contact_id: contactId,
+      event_id: input.event_id,
+    });
+  }
 
   if (input.note?.trim()) {
     await supabase.from("interactions").insert({
       contact_id: contactId,
+      event_id: input.event_id ?? null,
       type: "met_in_person",
       date: new Date().toISOString().slice(0, 10),
       summary: input.note.trim(),
     });
   }
+
+  revalidatePath("/contacts");
+  redirect("/contacts");
+}
+
+export type UpdateContactInput = {
+  id: string;
+  full_name: string;
+  organization_name?: string;
+  job_title?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  linkedin_url?: string;
+  priority: Priority;
+};
+
+export async function updateContact(input: UpdateContactInput) {
+  const supabase = await createClient();
+
+  let organization_id: string | null = null;
+  if (input.organization_name?.trim()) {
+    const orgResult = await findOrCreateOrg(supabase, input.organization_name);
+    if (orgResult.error) return { error: orgResult.error };
+    organization_id = orgResult.id;
+  }
+
+  const { error } = await supabase
+    .from("contacts")
+    .update({
+      full_name: input.full_name.trim(),
+      organization_id,
+      job_title: input.job_title?.trim() || null,
+      email: input.email?.trim() || null,
+      phone: input.phone?.trim() || null,
+      country: input.country?.trim() || null,
+      linkedin_url: input.linkedin_url?.trim() || null,
+      priority: input.priority,
+    })
+    .eq("id", input.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/contacts");
+  revalidatePath(`/contacts/${input.id}`);
+  return { success: true };
+}
+
+export async function deleteContact(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("contacts").delete().eq("id", id);
+  if (error) return { error: error.message };
 
   revalidatePath("/contacts");
   redirect("/contacts");
