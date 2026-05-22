@@ -12,6 +12,17 @@ type Tab = {
 
 const tabs: Tab[] = [
   {
+    href: "/",
+    label: "Home",
+    match: (p) => p === "/" || p.startsWith("/follow-ups"),
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
+  {
     href: "/contacts",
     label: "People",
     match: (p) => p === "/contacts" || p.startsWith("/contacts/"),
@@ -71,7 +82,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-lg min-w-[68px] transition-colors ${
+              className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg flex-1 max-w-[110px] transition-colors ${
                 active ? "text-[#3B82F6]" : "text-[#64748B] hover:text-[#94A3B8]"
               }`}
             >
