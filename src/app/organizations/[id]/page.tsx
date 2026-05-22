@@ -60,9 +60,19 @@ export default async function OrganizationPage({
       </header>
 
       <section>
-        <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider mb-3">
-          Contacts ({contacts?.length ?? 0})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider">
+            Contacts ({contacts?.length ?? 0})
+          </h2>
+          {contacts && contacts.length > 0 && (
+            <a
+              href={`/api/export/contacts/by-org/${org.id}`}
+              className="text-sm text-[#3B82F6] hover:text-[#2563EB] transition-colors"
+            >
+              Export CSV
+            </a>
+          )}
+        </div>
         {!contacts || contacts.length === 0 ? (
           <p className="text-sm text-[#475569] italic">No contacts in this organization yet.</p>
         ) : (

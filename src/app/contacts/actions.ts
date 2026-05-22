@@ -200,3 +200,45 @@ export async function deleteInteraction(id: string, contactId: string) {
   revalidatePath(`/contacts/${contactId}`);
   return { success: true };
 }
+
+export type QuickAddInput = {
+  event_id: string;
+  full_name: string;
+  organization_name?: string;
+  priority: Priority;
+};
+
+export async function quickAddContactForEvent(input: QuickAddInput) {
+  const supabase = await createClient();
+
+  let organization_id: string | null = null;
+  if (input.organization_name?.trim()) {
+    const orgResult = await findOrCreateOrg(supabase, input.organization_name);
+    if (orgResult.error) return { error: orgResult.error };
+    organization_id = orgResult.id;
+  }
+
+  const contactInsert = await supabase
+    .from("contacts")
+    .insert({
+      full_name: input.full_name.trim(),
+      organization_id,
+      priority: input.priority,
+    })
+    .select("id")
+    .single();
+
+  if (contactInsert.error) return { error: contactInsert.error.message };
+  const contactId = (contactInsert.data as { id: string }).id;
+
+  const linkInsert = await supabase.from("contact_events").insert({
+    contact_id: contactId,
+    event_id: input.event_id,
+  });
+
+  if (linkInsert.error) return { error: linkInsert.error.message };
+
+  revalidatePath(`/events/${input.event_id}`);
+  revalidatePath("/contacts");
+  return { success: true };
+}

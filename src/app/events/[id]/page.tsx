@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { QuickAddContact } from "./quick-add-contact";
 import type { Priority, EventType } from "@/types/database";
 
 const priorityDot: Record<Priority, string> = {
@@ -96,10 +97,22 @@ export default async function EventPage({
         )}
       </header>
 
+      <QuickAddContact eventId={event.id} />
+
       <section>
-        <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider mb-3">
-          People met here ({contacts.length})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider">
+            People met here ({contacts.length})
+          </h2>
+          {contacts.length > 0 && (
+            <a
+              href={`/api/export/contacts/by-event/${event.id}`}
+              className="text-sm text-[#3B82F6] hover:text-[#2563EB] transition-colors"
+            >
+              Export CSV
+            </a>
+          )}
+        </div>
         {contacts.length === 0 ? (
           <p className="text-sm text-[#475569] italic">
             No contacts linked yet. When you add a new contact, select this event to link them.

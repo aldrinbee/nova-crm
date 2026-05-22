@@ -443,6 +443,15 @@ export function ContactDetail({
         )}
       </section>
 
+      <section className="mb-4">
+        <a
+          href={`/api/export/vcard/${contact.id}`}
+          className="block w-full h-11 rounded-lg bg-[#0F2337] border border-[#1E3A5F] text-[#94A3B8] hover:text-[#F1F5F9] hover:border-[#3B82F6]/50 transition-colors text-sm flex items-center justify-center"
+        >
+          Download vCard (.vcf)
+        </a>
+      </section>
+
       <section className="mt-auto">
         {confirmDelete ? (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">

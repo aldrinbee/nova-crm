@@ -35,12 +35,23 @@ export default async function ContactsPage() {
             {contacts?.length ?? 0} {contacts?.length === 1 ? "contact" : "contacts"}
           </p>
         </div>
-        <Link
-          href="/contacts/new"
-          className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-[#3B82F6] text-white font-medium hover:bg-[#2563EB] transition-colors"
-        >
-          + Add
-        </Link>
+        <div className="flex items-center gap-2">
+          {contacts && contacts.length > 0 && (
+            <a
+              href="/api/export/contacts"
+              className="inline-flex items-center justify-center h-11 px-4 rounded-full bg-[#0F2337] border border-[#1E3A5F] text-[#94A3B8] text-sm font-medium hover:border-[#3B82F6]/50 hover:text-[#F1F5F9] transition-colors"
+              title="Download CSV"
+            >
+              Export
+            </a>
+          )}
+          <Link
+            href="/contacts/new"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-[#3B82F6] text-white font-medium hover:bg-[#2563EB] transition-colors"
+          >
+            + Add
+          </Link>
+        </div>
       </header>
 
       {!contacts || contacts.length === 0 ? (
