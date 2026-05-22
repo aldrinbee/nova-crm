@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { Priority } from "@/types/database";
+import type { Priority, InteractionType } from "@/types/database";
 
 export type CreateContactInput = {
   full_name: string;
@@ -163,4 +163,40 @@ export async function deleteContact(id: string) {
 
   revalidatePath("/contacts");
   redirect("/contacts");
+}
+
+export type CreateInteractionInput = {
+  contact_id: string;
+  event_id?: string;
+  type: InteractionType;
+  date: string;
+  summary?: string;
+  outcome?: string;
+};
+
+export async function createInteraction(input: CreateInteractionInput) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("interactions").insert({
+    contact_id: input.contact_id,
+    event_id: input.event_id || null,
+    type: input.type,
+    date: input.date,
+    summary: input.summary?.trim() || null,
+    outcome: input.outcome?.trim() || null,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/contacts/${input.contact_id}`);
+  return { success: true };
+}
+
+export async function deleteInteraction(id: string, contactId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("interactions").delete().eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/contacts/${contactId}`);
+  return { success: true };
 }

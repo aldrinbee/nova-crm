@@ -21,7 +21,7 @@ export default async function ContactPage({
 
   if (error || !contact) notFound();
 
-  const [interactionsRes, eventLinksRes, allEventsRes] = await Promise.all([
+  const [interactionsRes, eventLinksRes, allEventsRes, followUpsRes] = await Promise.all([
     supabase
       .from("interactions")
       .select("id, type, date, summary, outcome, created_at")
@@ -36,6 +36,11 @@ export default async function ContactPage({
       .select("id, name, start_date")
       .order("start_date", { ascending: false, nullsFirst: false })
       .limit(50),
+    supabase
+      .from("follow_ups")
+      .select("id, description, due_date, status, priority, created_at")
+      .eq("contact_id", id)
+      .order("due_date", { ascending: true }),
   ]);
 
   const linkedEvents = (eventLinksRes.data ?? [])
@@ -77,6 +82,14 @@ export default async function ContactPage({
         id: e.id,
         name: e.name,
         start_date: e.start_date,
+      }))}
+      followUps={(followUpsRes.data ?? []).map((f) => ({
+        id: f.id,
+        description: f.description,
+        due_date: f.due_date,
+        status: f.status,
+        priority: f.priority as Priority,
+        created_at: f.created_at,
       }))}
     />
   );

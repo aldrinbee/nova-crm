@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { updateContact, deleteContact } from "../actions";
+import { LogInteractionForm } from "./log-interaction-form";
+import { ContactFollowUps } from "./contact-follow-ups";
 import type { Priority, InteractionType } from "@/types/database";
 
 type Contact = {
@@ -42,6 +44,15 @@ type EventOption = {
   start_date: string | null;
 };
 
+type FollowUp = {
+  id: string;
+  description: string;
+  due_date: string;
+  status: string;
+  priority: Priority;
+  created_at: string;
+};
+
 const priorityStyle: Record<Priority, { dot: string; label: string; activeBg: string; activeRing: string }> = {
   hot: { dot: "bg-red-400", label: "Hot", activeBg: "bg-red-500/15", activeRing: "ring-red-400" },
   warm: { dot: "bg-amber-400", label: "Warm", activeBg: "bg-amber-500/15", activeRing: "ring-amber-400" },
@@ -73,14 +84,17 @@ export function ContactDetail({
   interactions,
   linkedEvents,
   allEvents,
+  followUps,
 }: {
   contact: Contact;
   interactions: Interaction[];
   linkedEvents: LinkedEvent[];
   allEvents: EventOption[];
+  followUps: FollowUp[];
 }) {
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [loggingInteraction, setLoggingInteraction] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
 
@@ -376,14 +390,39 @@ export function ContactDetail({
         )}
       </section>
 
+      <ContactFollowUps contactId={contact.id} followUps={followUps} />
+
       <section className="mb-6">
-        <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider mb-3">
-          Interactions ({interactions.length})
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider">
+            Interactions ({interactions.length})
+          </h2>
+          {!loggingInteraction && (
+            <button
+              type="button"
+              onClick={() => setLoggingInteraction(true)}
+              className="text-sm font-medium text-[#3B82F6] hover:text-[#2563EB] transition-colors"
+            >
+              + Log
+            </button>
+          )}
+        </div>
+
+        {loggingInteraction && (
+          <LogInteractionForm
+            contactId={contact.id}
+            events={allEvents}
+            onSaved={() => setLoggingInteraction(false)}
+            onCancel={() => setLoggingInteraction(false)}
+          />
+        )}
+
         {interactions.length === 0 ? (
-          <p className="text-sm text-[#475569] italic">
-            No interactions logged yet. Stage 5 adds the ability to log calls, meetings, and follow-ups.
-          </p>
+          !loggingInteraction && (
+            <p className="text-sm text-[#475569] italic">
+              No interactions logged yet. Tap <span className="text-[#3B82F6]">+ Log</span> to record a meeting, call, or email.
+            </p>
+          )
         ) : (
           <ul className="flex flex-col gap-2">
             {interactions.map((i) => (

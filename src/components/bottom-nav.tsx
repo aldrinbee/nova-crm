@@ -58,7 +58,7 @@ const tabs: Tab[] = [
 export function BottomNav() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/auth")) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/auth")) {
     return null;
   }
 
