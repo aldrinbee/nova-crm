@@ -75,24 +75,24 @@ export function FollowUpItem({
           type="button"
           onClick={handleComplete}
           disabled={isPending}
-          title="Mark done"
-          className="w-11 h-11 flex items-center justify-center rounded-lg bg-[#0F2337] border border-[#1E3A5F] hover:border-green-500/50 hover:bg-green-500/10 transition-colors disabled:opacity-50"
+          className="w-14 h-14 flex flex-col items-center justify-center gap-0.5 rounded-lg bg-[#0F2337] border border-[#1E3A5F] hover:border-green-500/50 hover:bg-green-500/10 transition-colors disabled:opacity-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
             <polyline points="20 6 9 17 4 12" />
           </svg>
+          <span className="text-[9px] font-medium text-[#94A3B8] uppercase tracking-wider">Done</span>
         </button>
         <button
           type="button"
           onClick={handleSnooze}
           disabled={isPending}
-          title="Snooze 1 week"
-          className="w-11 h-11 flex items-center justify-center rounded-lg bg-[#0F2337] border border-[#1E3A5F] hover:border-[#3B82F6]/50 hover:bg-[#3B82F6]/10 transition-colors disabled:opacity-50"
+          className="w-14 h-14 flex flex-col items-center justify-center gap-0.5 rounded-lg bg-[#0F2337] border border-[#1E3A5F] hover:border-[#3B82F6]/50 hover:bg-[#3B82F6]/10 transition-colors disabled:opacity-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#94A3B8]">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
+          <span className="text-[9px] font-medium text-[#94A3B8] uppercase tracking-wider">Snooze</span>
         </button>
       </div>
     </li>
