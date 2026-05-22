@@ -28,6 +28,20 @@ type Interaction = {
   created_at: string;
 };
 
+type LinkedEvent = {
+  id: string;
+  name: string;
+  start_date: string | null;
+  location: string | null;
+  country: string | null;
+};
+
+type EventOption = {
+  id: string;
+  name: string;
+  start_date: string | null;
+};
+
 const priorityStyle: Record<Priority, { dot: string; label: string; activeBg: string; activeRing: string }> = {
   hot: { dot: "bg-red-400", label: "Hot", activeBg: "bg-red-500/15", activeRing: "ring-red-400" },
   warm: { dot: "bg-amber-400", label: "Warm", activeBg: "bg-amber-500/15", activeRing: "ring-amber-400" },
@@ -49,12 +63,21 @@ function formatLongDate(iso: string) {
   });
 }
 
+function formatShortDate(iso: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 export function ContactDetail({
   contact,
   interactions,
+  linkedEvents,
+  allEvents,
 }: {
   contact: Contact;
   interactions: Interaction[];
+  linkedEvents: LinkedEvent[];
+  allEvents: EventOption[];
 }) {
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -69,6 +92,13 @@ export function ContactDetail({
   const [country, setCountry] = useState(contact.country ?? "");
   const [linkedin, setLinkedin] = useState(contact.linkedin_url ?? "");
   const [priority, setPriority] = useState<Priority>(contact.priority);
+  const [eventIds, setEventIds] = useState<string[]>(linkedEvents.map((e) => e.id));
+
+  function toggleEvent(eventId: string) {
+    setEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
+    );
+  }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -88,6 +118,7 @@ export function ContactDetail({
         country,
         linkedin_url: linkedin,
         priority,
+        linked_event_ids: eventIds,
       });
       if (result?.error) setError(result.error);
       else setEditing(false);
@@ -109,7 +140,11 @@ export function ContactDetail({
         <header className="flex items-center justify-between mb-8">
           <button
             type="button"
-            onClick={() => { setEditing(false); setError(""); }}
+            onClick={() => {
+              setEditing(false);
+              setError("");
+              setEventIds(linkedEvents.map((e) => e.id));
+            }}
             className="text-sm text-[#94A3B8] hover:text-[#F1F5F9] transition-colors"
           >
             ← Cancel
@@ -177,6 +212,50 @@ export function ContactDetail({
               className="w-full h-12 px-4 rounded-lg bg-[#0F2337] border border-[#1E3A5F] text-[#F1F5F9] focus:outline-none focus:border-[#3B82F6] transition-colors"
             />
           </Field>
+
+          {allEvents.length > 0 && (
+            <div>
+              <label className="block text-sm text-[#94A3B8] mb-2">Met at</label>
+              <p className="text-xs text-[#475569] mb-3">
+                Tap to link or unlink. A contact can be met at multiple events.
+              </p>
+              <div className="flex flex-col gap-2">
+                {allEvents.map((ev) => {
+                  const selected = eventIds.includes(ev.id);
+                  const date = formatShortDate(ev.start_date);
+                  return (
+                    <button
+                      key={ev.id}
+                      type="button"
+                      onClick={() => toggleEvent(ev.id)}
+                      className={`flex items-center justify-between gap-3 p-3 rounded-lg border text-left transition-all ${
+                        selected
+                          ? "bg-[#3B82F6]/15 border-[#3B82F6]"
+                          : "bg-[#0F2337] border-[#1E3A5F] hover:border-[#3B82F6]/50"
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#F1F5F9] truncate">{ev.name}</p>
+                        {date && <p className="text-xs text-[#94A3B8]">{date}</p>}
+                      </div>
+                      <span
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                          selected ? "border-[#3B82F6] bg-[#3B82F6]" : "border-[#475569]"
+                        }`}
+                      >
+                        {selected && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm text-[#94A3B8] mb-3">Priority</label>
             <div className="grid grid-cols-3 gap-2">
@@ -245,7 +324,12 @@ export function ContactDetail({
       </div>
 
       <section className="bg-[#0F2337] border border-[#1E3A5F] rounded-xl p-5 mb-6">
-        <DetailRow label="Organization" value={contact.organization_name} />
+        <DetailRow
+          label="Organization"
+          value={contact.organization_name}
+          link={contact.organization_id ? `/organizations/${contact.organization_id}` : null}
+          internal
+        />
         <DetailRow label="Job title" value={contact.job_title} />
         <DetailRow label="Email" value={contact.email} />
         <DetailRow label="Phone" value={contact.phone} />
@@ -256,6 +340,40 @@ export function ContactDetail({
           link={contact.linkedin_url}
           isLast
         />
+      </section>
+
+      <section className="mb-6">
+        <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider mb-3">
+          Met at ({linkedEvents.length})
+        </h2>
+        {linkedEvents.length === 0 ? (
+          <p className="text-sm text-[#475569] italic">
+            No events linked yet. Tap Edit to link this contact to events you&apos;ve attended together.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {linkedEvents.map((ev) => {
+              const date = formatShortDate(ev.start_date);
+              const location = [ev.location, ev.country].filter(Boolean).join(", ");
+              return (
+                <li key={ev.id}>
+                  <Link
+                    href={`/events/${ev.id}`}
+                    className="flex items-center justify-between gap-3 p-4 rounded-xl bg-[#0F2337] border border-[#1E3A5F] hover:border-[#3B82F6]/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-[#F1F5F9] truncate">{ev.name}</p>
+                      <p className="text-sm text-[#94A3B8] truncate">
+                        {[date, location].filter(Boolean).join(" · ") || "—"}
+                      </p>
+                    </div>
+                    <span className="text-[#475569] text-sm">→</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="mb-6">
@@ -350,11 +468,13 @@ function DetailRow({
   label,
   value,
   link,
+  internal,
   isLast,
 }: {
   label: string;
   value: string | null;
   link?: string | null;
+  internal?: boolean;
   isLast?: boolean;
 }) {
   return (
@@ -366,14 +486,23 @@ function DetailRow({
       <span className="text-sm text-[#94A3B8] flex-shrink-0">{label}</span>
       {value ? (
         link ? (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-[#3B82F6] hover:underline text-right break-all"
-          >
-            {value}
-          </a>
+          internal ? (
+            <Link
+              href={link}
+              className="text-sm text-[#3B82F6] hover:underline text-right break-words"
+            >
+              {value}
+            </Link>
+          ) : (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-[#3B82F6] hover:underline text-right break-all"
+            >
+              {value}
+            </a>
+          )
         ) : (
           <span className="text-sm text-[#F1F5F9] text-right break-words">{value}</span>
         )

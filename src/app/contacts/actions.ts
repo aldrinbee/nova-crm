@@ -95,6 +95,7 @@ export type UpdateContactInput = {
   country?: string;
   linkedin_url?: string;
   priority: Priority;
+  linked_event_ids: string[];
 };
 
 export async function updateContact(input: UpdateContactInput) {
@@ -107,7 +108,7 @@ export async function updateContact(input: UpdateContactInput) {
     organization_id = orgResult.id;
   }
 
-  const { error } = await supabase
+  const { error: updateError } = await supabase
     .from("contacts")
     .update({
       full_name: input.full_name.trim(),
@@ -121,7 +122,34 @@ export async function updateContact(input: UpdateContactInput) {
     })
     .eq("id", input.id);
 
-  if (error) return { error: error.message };
+  if (updateError) return { error: updateError.message };
+
+  const existingLinks = await supabase
+    .from("contact_events")
+    .select("event_id")
+    .eq("contact_id", input.id);
+
+  const existingIds = new Set(
+    (existingLinks.data ?? []).map((r) => (r as { event_id: string }).event_id)
+  );
+  const desiredIds = new Set(input.linked_event_ids);
+
+  const toAdd = [...desiredIds].filter((id) => !existingIds.has(id));
+  const toRemove = [...existingIds].filter((id) => !desiredIds.has(id));
+
+  if (toAdd.length > 0) {
+    await supabase
+      .from("contact_events")
+      .insert(toAdd.map((event_id) => ({ contact_id: input.id, event_id })));
+  }
+
+  if (toRemove.length > 0) {
+    await supabase
+      .from("contact_events")
+      .delete()
+      .eq("contact_id", input.id)
+      .in("event_id", toRemove);
+  }
 
   revalidatePath("/contacts");
   revalidatePath(`/contacts/${input.id}`);
