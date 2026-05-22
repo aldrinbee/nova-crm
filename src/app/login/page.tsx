@@ -19,18 +19,40 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    });
+    try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-    if (error) {
-      setError(error.message);
-    } else {
+      const response = await fetch(`${url}/auth/v1/otp`, {
+        method: "POST",
+        headers: {
+          apikey: key,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          create_user: true,
+          gotrue_meta_security: {},
+        }),
+        referrerPolicy: "no-referrer",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(
+          data.msg ||
+            data.error_description ||
+            data.message ||
+            `HTTP ${response.status}`
+        );
+      }
+
       setStep("code");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send code");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleVerifyCode(e: React.FormEvent) {
