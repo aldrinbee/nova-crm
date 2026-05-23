@@ -59,6 +59,30 @@ export async function snoozeFollowUp(id: string, contactId: string, days: number
   return { success: true };
 }
 
+export type UpdateFollowUpInput = {
+  description: string;
+  due_date: string;
+  priority: Priority;
+};
+
+export async function updateFollowUp(id: string, contactId: string, input: UpdateFollowUpInput) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("follow_ups")
+    .update({
+      description: input.description.trim(),
+      due_date: input.due_date,
+      priority: input.priority,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  revalidatePath("/follow-ups");
+  revalidatePath(`/contacts/${contactId}`);
+  return { success: true };
+}
+
 export async function deleteFollowUp(id: string, contactId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("follow_ups").delete().eq("id", id);

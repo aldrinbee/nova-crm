@@ -70,15 +70,29 @@ export default async function EventPage({
   const dateRange = formatDateRange(event.start_date, event.end_date);
   const location = [event.location, event.country].filter(Boolean).join(", ");
 
+  const today = new Date().toISOString().slice(0, 10);
+  const refDate = event.end_date ?? event.start_date;
+  const canEdit = !refDate || refDate >= today;
+
   return (
     <main className="flex flex-1 flex-col min-h-screen px-4 pt-6 pb-32 max-w-2xl mx-auto w-full">
       <header className="mb-6">
-        <Link
-          href="/events"
-          className="text-sm text-[#94A3B8] hover:text-[#F1F5F9] transition-colors inline-block mb-4"
-        >
-          ← Events
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link
+            href="/events"
+            className="text-sm text-[#94A3B8] hover:text-[#F1F5F9] transition-colors"
+          >
+            ← Events
+          </Link>
+          {canEdit && (
+            <Link
+              href={`/events/${id}/edit`}
+              className="text-sm text-[#3B82F6] hover:text-[#2563EB] transition-colors"
+            >
+              Edit
+            </Link>
+          )}
+        </div>
         <h1 className="text-3xl font-bold text-[#F1F5F9] mb-2">{event.name}</h1>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#94A3B8]">
           {event.type && <span>{typeLabel[event.type as EventType]}</span>}
